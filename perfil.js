@@ -3,30 +3,29 @@
   const $ = (s, c = document) => c.querySelector(s);
   const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
-  const USERS = 'bioeduca_users', CURRENT = 'bioeduca_current_user', SESSION = 'bioeduca-session', PASS = 'bioeduca-profile-pass', PROF = 'bioeduca-profile:';
+  const KEY = 'bioeduca-profile', PASS = 'bioeduca-profile-pass', SESSION = 'bioeduca-session';
   const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  const FIELDS = ['name', 'email', 'phone', 'profession', 'position', 'area', 'userType', 'resp'];
-  const REQUIRED = ['name', 'email', 'profession', 'position', 'userType'];
+  const FIELDS = ['name', 'role', 'email', 'phone', 'org', 'bio'];
+  const blank = () => ({ name: '', role: '', email: '', phone: '', org: '', bio: '', avatar: '', prefs: { notif: true, digest: false, forum: true } });
 
   /* ---------- Almacenamiento ---------- */
   const read = k => { try { return localStorage.getItem(k); } catch (_) { return null; } };
   const write = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (_) { return false; } };
-  const drop = k => { try { localStorage.removeItem(k); } catch (_) { /* nada */ } };
-  const json = (k, d) => { try { const v = JSON.parse(read(k) || 'null'); return v === null ? d : v; } catch (_) { return d; } };
-  const getUsers = () => { const u = json(USERS, []); return Array.isArray(u) ? u : []; };
-
-  /* ---------- Sesión obligatoria ---------- */
-  let cur = json(CURRENT, null);
-  if (!cur || !cur.email) { window.location.replace('login.html'); return; }
-
-  const blank = () => ({ name: cur.name || '', email: cur.email, phone: '', profession: '', position: '', area: '', userType: '', resp: '', avatar: '', prefs: { notif: true, digest: false, forum: true } });
   const load = () => {
-    const base = blank(), d = json(PROF + cur.email, null);
-    return d && typeof d === 'object' ? { ...base, ...d, prefs: { ...base.prefs, ...(d.prefs || {}) } } : base;
+    const base = blank();
+    try {
+      const d = JSON.parse(read(KEY) || 'null');
+      if (d && typeof d === 'object') return { ...base, ...d, prefs: { ...base.prefs, ...(d.prefs || {}) } };
+      const s = JSON.parse(read(SESSION) || 'null');
+      if (s && typeof s === 'object') return { ...base, name: String(s.name || ''), email: String(s.email || '') };
+    } catch (_) { /* datos corruptos: se parte en blanco */ }
+    return base;
   };
+  const persist = p => write(KEY, JSON.stringify(p));
+
+  /* ---------- Estado ---------- */
   let saved = load();
   let avatarDraft = saved.avatar;
-  let leaving = false;
 
   /* ---------- Avisos ---------- */
   let toastTimer;
@@ -48,35 +47,28 @@
     if (url) { img.src = url; img.hidden = false; tx.hidden = true; }
     else { img.removeAttribute('src'); img.hidden = true; tx.hidden = false; tx.textContent = initials(name); }
   };
-  const missing = () => REQUIRED.filter(k => !String(saved[k] || '').trim());
   const paintSide = () => {
     paintAvatar($('#av-main'), avatarDraft, saved.name);
     paintAvatar($('#av-chip'), saved.avatar, saved.name);
     $('#s-name').textContent = saved.name || 'Completa tu perfil';
-    $('#s-role').textContent = saved.position;
-    $('#s-org').textContent = saved.userType;
+    $('#s-role').textContent = saved.role;
+    $('#s-org').textContent = saved.org;
     $('#chip-name').textContent = saved.name ? saved.name.split(/\s+/)[0] : 'Mi perfil';
     $('#av-rm').disabled = !avatarDraft;
-    const st = $('#status'), done = !!cur.profileComplete && !missing().length;
-    st.textContent = done ? 'Perfil completo' : 'Perfil incompleto: faltan datos obligatorios';
-    st.classList.toggle('ok', done);
   };
 
   /* ---------- Validación ---------- */
-  const max = (n, label) => v => v.trim().length <= n || `${label} admite máximo ${n} caracteres.`;
   const val = {
     name: v => v.trim().length >= 3 || 'Escribe tu nombre completo (mínimo 3 caracteres).',
+    role: v => v.trim().length <= 60 || 'El cargo admite máximo 60 caracteres.',
     email: v => EMAIL.test(v.trim()) || 'Ingresa un correo válido, por ejemplo nombre@institucion.edu.mx.',
     phone: v => {
       const t = v.trim(); if (!t) return true;
       const d = t.replace(/\D/g, '').length;
       return (/^[+()\d\s-]+$/.test(t) && d >= 8 && d <= 15) || 'Teléfono no válido: usa de 8 a 15 dígitos, por ejemplo +52 81 0000 0000.';
     },
-    profession: v => v.trim().length >= 3 || 'Indica tu profesión o especialidad.',
-    position: v => v.trim().length >= 2 || 'Indica tu cargo o función.',
-    area: max(60, 'El área'),
-    userType: v => !!v || 'Selecciona tu tipo de usuario o relación institucional.',
-    resp: () => true
+    org: v => v.trim().length <= 80 || 'La institución admite máximo 80 caracteres.',
+    bio: v => v.length <= 280 || 'La biografía admite máximo 280 caracteres.'
   };
   const mark = (el, msg) => {
     const f = el.closest('.field');
@@ -85,94 +77,51 @@
     el.setAttribute('aria-invalid', String(!!msg));
     return !msg;
   };
-  const inp = k => $('#f-' + k);
-  const check = k => { const r = val[k](inp(k).value); return mark(inp(k), r === true ? '' : r); };
-
-  /* ---------- Pestañas ---------- */
-  const tablist = $('[data-tabs]'), tabs = $$('.tab', tablist);
-  const selectTab = tab => {
-    tabs.forEach(t => {
-      const on = t === tab;
-      t.classList.toggle('is-active', on); t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1;
-      $('#' + t.getAttribute('aria-controls')).hidden = !on;
-    });
-    $('#data-actions').hidden = tab.id === 't-cta';
-  };
-  tablist.addEventListener('click', e => { const t = e.target.closest('.tab'); if (t) selectTab(t); });
-  tablist.addEventListener('keydown', e => {
-    const i = tabs.indexOf(document.activeElement); if (i < 0) return;
-    const k = e.key; let n = null;
-    if (k === 'ArrowDown' || k === 'ArrowRight') n = (i + 1) % tabs.length;
-    else if (k === 'ArrowUp' || k === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length;
-    else if (k === 'Home') n = 0; else if (k === 'End') n = tabs.length - 1;
-    if (n === null) return;
-    e.preventDefault(); tabs[n].focus(); selectTab(tabs[n]);
-  });
-  const showFieldTab = k => {
-    const panel = inp(k).closest('[role="tabpanel"]');
-    const tab = tabs.find(t => t.getAttribute('aria-controls') === panel.id);
-    if (tab) selectTab(tab);
-  };
+  const inp = id => $('#f-' + id);
+  const check = id => { const r = val[id](inp(id).value); return mark(inp(id), r === true ? '' : r); };
 
   /* ---------- Formulario de datos ---------- */
-  const form = $('#f-datos');
-  const isDirty = () => FIELDS.some(k => inp(k).value.trim() !== String(saved[k] || '')) || avatarDraft !== saved.avatar;
+  const form = $('#f-datos'), bioCount = $('#bio-count');
+  const isDirty = () => FIELDS.some(k => inp(k).value.trim() !== saved[k]) || avatarDraft !== saved.avatar;
   const refreshDirty = () => { $('#dirty').hidden = !isDirty(); };
   const fill = () => {
-    FIELDS.forEach(k => { inp(k).value = saved[k] || ''; mark(inp(k), ''); });
-    avatarDraft = saved.avatar; $('#av-err').textContent = '';
+    FIELDS.forEach(k => { inp(k).value = saved[k]; mark(inp(k), ''); });
+    avatarDraft = saved.avatar;
+    bioCount.textContent = `${inp('bio').value.length}/${inp('bio').maxLength}`;
+    $('#av-err').textContent = '';
     paintSide(); refreshDirty();
   };
   FIELDS.forEach(k => {
     const el = inp(k);
-    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
+    el.addEventListener('input', () => {
       if (el.closest('.field').classList.contains('is-invalid')) check(k);
+      if (k === 'bio') bioCount.textContent = `${el.value.length}/${el.maxLength}`;
       refreshDirty();
     });
-    el.addEventListener('blur', () => { if (el.value || REQUIRED.includes(k)) check(k); });
+    el.addEventListener('blur', () => check(k));
   });
-
-  /* Sincroniza usuario, sesión activa y perfil tras guardar */
-  function persistAll(next) {
-    const oldEmail = cur.email, email = next.email;
-    const users = getUsers(), idx = users.findIndex(u => u.email === oldEmail);
-    if (idx >= 0) users[idx] = { ...users[idx], name: next.name, email, phone: next.phone, profileComplete: true, updatedAt: new Date().toISOString() };
-    const session = { ...cur, name: next.name, email, profileComplete: true };
-    if (!(write(PROF + email, JSON.stringify(next)) && write(USERS, JSON.stringify(users)) && write(CURRENT, JSON.stringify(session)) && write(SESSION, JSON.stringify({ name: next.name, email })))) return false;
-    if (email !== oldEmail) drop(PROF + oldEmail);
-    cur = session;
-    return true;
-  }
-
   form.addEventListener('submit', e => {
     e.preventDefault();
     const results = FIELDS.map(k => check(k));
-    const badKey = FIELDS.find((k, i) => !results[i]);
-    if (badKey) {
-      showFieldTab(badKey); inp(badKey).focus();
+    if (results.includes(false)) {
+      const bad = $('.field.is-invalid input, .field.is-invalid textarea', form);
+      if (bad) bad.focus();
       toast('Revisa los campos marcados en rojo.', 'err');
-      return;
-    }
-    const email = inp('email').value.trim().toLowerCase();
-    if (getUsers().some(u => u.email === email && u.email !== cur.email)) {
-      showFieldTab('email'); mark(inp('email'), 'Ese correo ya pertenece a otra cuenta.'); inp('email').focus();
-      toast('Ese correo ya está registrado en otra cuenta.', 'err');
       return;
     }
     const next = { ...saved, avatar: avatarDraft };
     FIELDS.forEach(k => { next[k] = inp(k).value.trim(); });
-    next.email = email;
-    if (!persistAll(next)) { toast('No se pudo guardar: el almacenamiento del navegador está lleno o desactivado.', 'err'); return; }
+    if (!persist(next)) { toast('No se pudo guardar: el almacenamiento del navegador está lleno o desactivado.', 'err'); return; }
     saved = next; fill();
-    toast('Perfil guardado. Tu perfil está completo.');
+    toast('Cambios guardados correctamente.');
   });
   $('#f-reset').addEventListener('click', () => {
     if (!isDirty()) { toast('No hay cambios por descartar.', 'info'); return; }
     fill(); toast('Cambios descartados. Se restauraron tus datos guardados.', 'info');
   });
-  window.addEventListener('beforeunload', e => { if (!leaving && isDirty()) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
-  /* ---------- Foto de perfil (opcional, con previsualización) ---------- */
+  /* ---------- Foto de perfil ---------- */
   const square = file => new Promise((ok, no) => {
     const url = URL.createObjectURL(file), img = new Image();
     img.onload = () => {
@@ -204,7 +153,25 @@
     toast('Foto quitada. Pulsa «Guardar cambios» para aplicarlo.', 'info');
   });
 
-  /* ---------- Contraseña (contra bioeduca_users) ---------- */
+  /* ---------- Pestañas ---------- */
+  const tablist = $('[data-tabs]'), tabs = $$('.tab', tablist);
+  const selectTab = tab => tabs.forEach(t => {
+    const on = t === tab;
+    t.classList.toggle('is-active', on); t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1;
+    $('#' + t.getAttribute('aria-controls')).hidden = !on;
+  });
+  tablist.addEventListener('click', e => { const t = e.target.closest('.tab'); if (t) selectTab(t); });
+  tablist.addEventListener('keydown', e => {
+    const i = tabs.indexOf(document.activeElement); if (i < 0) return;
+    const k = e.key; let n = null;
+    if (k === 'ArrowDown' || k === 'ArrowRight') n = (i + 1) % tabs.length;
+    else if (k === 'ArrowUp' || k === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length;
+    else if (k === 'Home') n = 0; else if (k === 'End') n = tabs.length - 1;
+    if (n === null) return;
+    e.preventDefault(); tabs[n].focus(); selectTab(tabs[n]);
+  });
+
+  /* ---------- Contraseña ---------- */
   const pf = $('#f-pass'), pNow = $('#p-now'), pNew = $('#p-new'), pRep = $('#p-rep');
   const meter = $('.meter'), meterTxt = $('#meter-txt');
   const labels = ['Usa mayúsculas, números y símbolos.', 'Débil: agrega más caracteres y variedad.', 'Media: casi lista, añade un símbolo o más longitud.', 'Buena: un poco más y será excelente.', 'Fuerte: ¡excelente contraseña!'];
@@ -224,6 +191,10 @@
     if (/\d/.test(v)) s++;
     if (/[^A-Za-z0-9]/.test(v) || v.length >= 14) s++;
     return v ? Math.max(s, 1) : 0;
+  };
+  const syncPassUI = () => {
+    const has = !!read(PASS);
+    $('#now-field').hidden = !has; $('#pass-note').hidden = has;
   };
   const resetPass = () => {
     pf.reset();
@@ -246,13 +217,14 @@
   pRep.addEventListener('input', () => mark(pRep, pRep.value && pRep.value !== pNew.value ? 'Las contraseñas no coinciden.' : ''));
   pf.addEventListener('submit', async e => {
     e.preventDefault();
-    const users = getUsers(), idx = users.findIndex(u => u.email === cur.email), n = pNew.value, oks = [];
-    if (idx < 0) { toast('No encontramos tu cuenta. Vuelve a iniciar sesión.', 'err'); return; }
-    if (!pNow.value) oks.push(mark(pNow, 'Escribe tu contraseña actual.'));
-    else if (await hash(pNow.value) !== users[idx].passHash) oks.push(mark(pNow, 'La contraseña actual no coincide.'));
-    else oks.push(mark(pNow, ''));
+    const stored = read(PASS), n = pNew.value, oks = [];
+    if (stored) {
+      if (!pNow.value) oks.push(mark(pNow, 'Escribe tu contraseña actual.'));
+      else if (await hash(pNow.value) !== stored) oks.push(mark(pNow, 'La contraseña actual no coincide.'));
+      else oks.push(mark(pNow, ''));
+    }
     if (n.length < 8 || !/[A-Za-z]/.test(n) || !/\d/.test(n)) oks.push(mark(pNew, 'Usa al menos 8 caracteres, con letras y números.'));
-    else if (n === pNow.value) oks.push(mark(pNew, 'La nueva contraseña debe ser distinta de la actual.'));
+    else if (stored && n === pNow.value) oks.push(mark(pNew, 'La nueva contraseña debe ser distinta de la actual.'));
     else oks.push(mark(pNew, ''));
     if (!pRep.value) oks.push(mark(pRep, 'Confirma tu nueva contraseña.'));
     else oks.push(mark(pRep, pRep.value === n ? '' : 'Las contraseñas no coinciden.'));
@@ -261,15 +233,13 @@
       toast('Revisa los campos marcados en rojo.', 'err');
       return;
     }
-    const h = await hash(n);
-    users[idx] = { ...users[idx], passHash: h, updatedAt: new Date().toISOString() };
-    if (!(write(USERS, JSON.stringify(users)) && write(PASS, h))) { toast('No se pudo guardar la contraseña en este navegador.', 'err'); return; }
-    resetPass();
+    if (!write(PASS, await hash(n))) { toast('No se pudo guardar la contraseña en este navegador.', 'err'); return; }
+    resetPass(); syncPassUI();
     toast('Contraseña actualizada correctamente.');
   });
   $('#pass-reset').addEventListener('click', resetPass);
 
-  /* ---------- Preferencias de notificaciones ---------- */
+  /* ---------- Preferencias ---------- */
   const pref = $('#f-pref');
   const fillPrefs = () => $$('input[data-pref]', pref).forEach(i => { i.checked = !!saved.prefs[i.dataset.pref]; });
   pref.addEventListener('submit', e => {
@@ -277,20 +247,12 @@
     const prefs = {};
     $$('input[data-pref]', pref).forEach(i => { prefs[i.dataset.pref] = i.checked; });
     const next = { ...saved, prefs };
-    if (!write(PROF + cur.email, JSON.stringify(next))) { toast('No se pudo guardar: el almacenamiento del navegador está lleno o desactivado.', 'err'); return; }
+    if (!persist(next)) { toast('No se pudo guardar: el almacenamiento del navegador está lleno o desactivado.', 'err'); return; }
     saved = next;
     toast('Preferencias guardadas.');
   });
   $('#pref-reset').addEventListener('click', () => { fillPrefs(); toast('Preferencias restablecidas a lo último guardado.', 'info'); });
 
-  /* ---------- Cerrar sesión ---------- */
-  $('#logout').addEventListener('click', () => {
-    if (isDirty() && !confirm('Tienes cambios sin guardar. ¿Cerrar sesión de todos modos?')) return;
-    leaving = true;
-    drop(CURRENT); drop(SESSION); drop(PASS);
-    window.location.href = 'login.html';
-  });
-
-  /* ---------- Arranque ---------- */
-  fill(); fillPrefs();
+  /* ---------- Arranque (al final, cuando todo está declarado) ---------- */
+  fill(); fillPrefs(); syncPassUI();
 })();

@@ -25,7 +25,7 @@
       <a href="#/recursos" data-route="recursos">Recursos</a>
       <a href="#/comunidad" data-route="comunidad">Comunidad</a>
       <a href="#/soporte" data-route="soporte">Soporte</a>
-      <a href="perfil.html" class="nav__profile" hidden><svg class="i" aria-hidden="true" focusable="false"><use href="#i-user"/></svg> Mi perfil</a>
+      <a href="perfil.html" class="nav__profile"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-user"/></svg> Mi perfil</a>
       <a class="btn btn--outline nav__cta" href="login.html">Ingresar</a>
     </nav>
   </div>
@@ -198,11 +198,11 @@
   <section class="container support">
     <div class="faq">
       <h2 class="h3">Preguntas frecuentes</h2>
-      <details name="faq" open><summary>¿Cómo inicio un diagnóstico?<svg class="i" aria-hidden="true" focusable="false"><use href="#i-chevron-down"/></svg></summary><p>Pulsa «Iniciar diagnóstico» en la página principal o entra a tu expediente y abre la etapa de Diagnóstico. Necesitas haber registrado tu espacio educativo y a la persona responsable.</p></details>
+      <details name="faq" open><summary>¿Cómo inicio un diagnóstico?<svg class="i" aria-hidden="true" focusable="false"><use href="#i-chevron-down"/></svg></summary><p>Pulsa «Iniciar diagnóstico» en la página principal o entra a tu Expediente Digital y abre el Módulo 1. Necesitas registrar tu espacio educativo y a la persona responsable.</p></details>
       <details name="faq"><summary>¿Qué necesito para crear mi cuenta?<svg class="i" aria-hidden="true" focusable="false"><use href="#i-chevron-down"/></svg></summary><p>Un correo electrónico, una contraseña de al menos 8 caracteres y aceptar los términos. Al registrarte te pediremos un código de seguridad de 6 dígitos.</p></details>
       <details name="faq"><summary>¿Cómo recibo el código de seguridad?<svg class="i" aria-hidden="true" focusable="false"><use href="#i-chevron-down"/></svg></summary><p>Llega al correo con el que te registras. En esta versión de demostración el código también aparece en pantalla.</p></details>
       <details name="faq"><summary>¿Puedo descargar las plantillas sin costo?<svg class="i" aria-hidden="true" focusable="false"><use href="#i-chevron-down"/></svg></summary><p>Sí. Todos los recursos de la biblioteca están disponibles para descarga. Elige el que necesitas y confirma en la ventana de descarga.</p></details>
-      <details name="faq"><summary>¿Qué es el Expediente Institucional?<svg class="i" aria-hidden="true" focusable="false"><use href="#i-chevron-down"/></svg></summary><p>Es el registro de tu espacio educativo y de su responsable. Genera un folio único y reúne las 9 etapas del ciclo: preparación, diagnóstico, estrategia, propuesta, validación, ejecución, verificación, mejora y cierre.</p></details>
+      <details name="faq"><summary>¿Qué es el Expediente Digital Institucional?<svg class="i" aria-hidden="true" focusable="false"><use href="#i-chevron-down"/></svg></summary><p>Es el registro de tu espacio educativo y de su responsable. Genera un folio único y da acceso a los 5 módulos: diagnóstico, estrategia, propuesta, validación y ejecución.</p></details>
       <details name="faq"><summary>¿Cuánto tarda la respuesta a un reporte técnico?<svg class="i" aria-hidden="true" focusable="false"><use href="#i-chevron-down"/></svg></summary><p>Cada reporte recibe un folio de seguimiento al enviarse. El tiempo de respuesta lo defines tú según tu equipo de soporte; por ahora es un valor de ejemplo.</p></details>
     </div>
     <div class="sp-card">
@@ -214,7 +214,7 @@
         </div>
         <div class="sp-row">
           <div class="sp-field"><label for="sp-type">Tipo de problema</label><select id="sp-type"><option value="">Selecciona…</option><option>No puedo iniciar sesión o registrarme</option><option>Error en un formulario</option><option>Falla al descargar un recurso</option><option>Problema visual o de diseño</option><option>La página va lenta o no carga</option><option>Otro</option></select><small class="sp-err" role="alert"></small></div>
-          <div class="sp-field"><label for="sp-module">Módulo donde ocurrió</label><select id="sp-module"><option value="">Selecciona…</option><option>Inicio</option><option>Recursos</option><option>Comunidad / Foro</option><option>Acceso (inicio de sesión)</option><option>Mi perfil</option><option>Expediente: espacio y responsable</option><option>Expediente: diagnóstico</option><option>Expediente: estrategia</option><option>Expediente: propuesta</option><option>Expediente: validación y auditoría</option><option>Expediente: ejecución</option><option>Expediente: verificar, actuar y cierre</option></select><small class="sp-err" role="alert"></small></div>
+          <div class="sp-field"><label for="sp-module">Módulo donde ocurrió</label><select id="sp-module"><option value="">Selecciona…</option><option>Inicio</option><option>Recursos</option><option>Comunidad / Foro</option><option>Acceso (inicio de sesión)</option><option>Expediente Digital</option><option>1. Diagnóstico</option><option>2. Estrategia</option><option>3. Propuesta</option><option>4. Validación Institucional</option><option>5. Ejecución y Verificación</option></select><small class="sp-err" role="alert"></small></div>
         </div>
         <div class="sp-field"><label for="sp-desc">Descripción</label><textarea id="sp-desc" rows="5" maxlength="800" placeholder="¿Qué estabas haciendo y qué pasó?"></textarea><small class="sp-err" role="alert"></small></div>
         <div class="sp-field"><span class="sp-lbl">Evidencia visual <span class="opt">(opcional)</span></span>
@@ -249,7 +249,7 @@
         <p>Una plataforma para evaluar y transformar espacios educativos a través del bienestar, la biofilia y el diseño regenerativo.</p>
         <div class="social"><a href="#" data-soon="Esta sección estará disponible pronto." aria-label="LinkedIn">IN</a><a href="#" data-soon="Esta sección estará disponible pronto." aria-label="Instagram">IG</a><a href="#" data-soon="Esta sección estará disponible pronto." aria-label="YouTube">YT</a></div>
       </div>
-      <nav aria-label="Plataforma"><h4>Plataforma</h4><a href="#/">Cómo funciona</a><a href="#/" data-open-diag>Diagnóstico</a><a href="#/">Estrategias</a><a href="#/">Seguimiento</a></nav>
+      <nav aria-label="Plataforma"><h4>Plataforma</h4><a href="#/">Cómo funciona</a><a href="#/">Diagnóstico</a><a href="#/">Estrategias</a><a href="#/">Seguimiento</a></nav>
       <nav aria-label="Aprende"><h4>Aprende</h4><a href="#/recursos">Guías y plantillas</a><a href="#/recursos">Evidencia científica</a><a href="#/recursos">Casos de referencia</a><a href="#/soporte">Preguntas frecuentes</a></nav>
       <nav aria-label="Bioeduca"><h4>Bioeduca</h4><a href="#/quienes-somos">Quiénes somos</a><a href="#/quienes-somos">Nuestro propósito</a><a href="#/quienes-somos">Contacto</a><a href="#/soporte">Soporte técnico</a><a href="#/comunidad">Comunidad</a><a href="perfil.html">Mi perfil</a></nav>
       <form class="news" novalidate>
@@ -265,6 +265,7 @@
 </footer>
 
 <dialog class="modal" id="dl"><div class="modal__in"><h2 id="dl-title">Descargar recurso</h2><p class="muted" id="dl-meta"></p><p class="dl-ok"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-check-circle-2"/></svg> Disponible para descarga</p><div class="prog" id="dl-prog" hidden><i></i></div><p class="muted" id="dl-status" role="status"></p><div class="modal__row"><button type="button" class="btn btn--outline" id="dl-cancel">Cancelar</button><button type="button" class="btn btn--primary" id="dl-start"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-download"/></svg> Descargar</button></div></div></dialog>
+<dialog class="modal" id="diag"><form method="dialog" class="modal__in"><h2>Iniciar diagnóstico</h2><p class="muted">Cuéntanos sobre el espacio que quieres evaluar.</p><label>Nombre del espacio<input required placeholder="Ej. Aula 3B"></label><label>Tipo<select><option>Aula</option><option>Patio</option><option>Biblioteca</option><option>Otro</option></select></label><div class="modal__row"><button value="cancel" class="btn btn--outline" formnovalidate>Cancelar</button><button value="ok" class="btn btn--primary">Comenzar</button></div></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>
